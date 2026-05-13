@@ -45,10 +45,13 @@ export interface ItemRecord extends ListItem {
 }
 
 function toListItem(rec: Record<string, unknown>): ListItem {
+  const rawQty = typeof rec.quantity === "number" ? rec.quantity : Number(rec.quantity);
+  const quantity = Number.isFinite(rawQty) && rawQty >= 1 ? Math.floor(rawQty) : 1;
   return {
     id: String(rec.id ?? ""),
     textEn: String(rec.textEn ?? ""),
     textZh: String(rec.textZh ?? ""),
+    quantity,
     checked: Boolean(rec.checked),
     addedAt: String(rec.addedAt ?? ""),
     checkedAt: rec.checkedAt == null ? null : String(rec.checkedAt),
@@ -131,6 +134,20 @@ export async function updateItemText(item: ListItem): Promise<void> {
         ":en": item.textEn,
         ":zh": item.textZh,
       },
+    }),
+  );
+}
+
+export async function updateItemQuantity(
+  id: string,
+  quantity: number,
+): Promise<void> {
+  await ddb.send(
+    new UpdateCommand({
+      TableName: TABLE,
+      Key: { PK: pk(), SK: skItem(id) },
+      UpdateExpression: "SET quantity = :q",
+      ExpressionAttributeValues: { ":q": quantity },
     }),
   );
 }

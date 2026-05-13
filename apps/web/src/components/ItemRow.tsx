@@ -6,12 +6,27 @@ interface Props {
   item: ListItem;
   onToggle: (id: string, checked: boolean) => void;
   onDelete: (id: string) => void;
+  onQuantityChange: (id: string, quantity: number) => void;
   deleteLabel: string;
+  decLabel: string;
+  incLabel: string;
 }
 
-export function ItemRow({ item, onToggle, onDelete, deleteLabel }: Props) {
+const MIN_QTY = 1;
+const MAX_QTY = 999;
+
+export function ItemRow({
+  item,
+  onToggle,
+  onDelete,
+  onQuantityChange,
+  deleteLabel,
+  decLabel,
+  incLabel,
+}: Props) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const label = formatItemRichLine(item);
+  const qty = Math.max(MIN_QTY, Math.floor(item.quantity || 1));
 
   const onTouchStart = (e: TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -23,6 +38,15 @@ export function ItemRow({ item, onToggle, onDelete, deleteLabel }: Props) {
     if (dx < -80) {
       onDelete(item.id);
     }
+  };
+
+  const dec = () => {
+    if (qty <= MIN_QTY) return;
+    onQuantityChange(item.id, qty - 1);
+  };
+  const inc = () => {
+    if (qty >= MAX_QTY) return;
+    onQuantityChange(item.id, qty + 1);
   };
 
   return (
@@ -50,6 +74,36 @@ export function ItemRow({ item, onToggle, onDelete, deleteLabel }: Props) {
           {label}
         </span>
       </button>
+
+      <div className="flex shrink-0 items-center gap-1 pr-1">
+        <button
+          type="button"
+          onClick={dec}
+          disabled={qty <= MIN_QTY}
+          aria-label={decLabel}
+          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-900/15 bg-white text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
+        >
+          −
+        </button>
+        <span
+          className={`min-w-[2.25rem] text-center text-base font-semibold tabular-nums ${
+            item.checked ? "text-emerald-800/50" : "text-emerald-950"
+          }`}
+          aria-label={`${qty}`}
+        >
+          ×&nbsp;{qty}
+        </span>
+        <button
+          type="button"
+          onClick={inc}
+          disabled={qty >= MAX_QTY}
+          aria-label={incLabel}
+          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-900/15 bg-white text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
+        >
+          +
+        </button>
+      </div>
+
       <button
         type="button"
         className="shrink-0 px-3 text-sm font-medium text-rose-600 hover:bg-rose-50"

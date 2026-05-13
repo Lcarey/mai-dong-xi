@@ -1,0 +1,2 @@
+- Do all work in a new branch. After completing, merge with main and deploy.
+- 99% of use for this app will be on phone and ipad (not desktop)

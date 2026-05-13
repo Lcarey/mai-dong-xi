@@ -21,8 +21,18 @@ import {
   listItems,
   putItem,
   updateItemChecked,
+  updateItemQuantity,
   updateItemText,
 } from "./db.js";
+
+function normalizeQuantity(raw: unknown): number | null {
+  if (raw === undefined) return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return null;
+  const floored = Math.floor(n);
+  if (floored < 1) return null;
+  return Math.min(floored, 999);
+}
 import { bilingualFromInput } from "./translate.js";
 
 const app = new Hono();
@@ -54,6 +64,7 @@ app.post("/items", async (c) => {
   if (!text.trim()) {
     return c.json({ error: "text is required" }, 400);
   }
+  const quantity = normalizeQuantity(body.quantity) ?? 1;
   await ensureMeta();
   const { textEn, textZh } = await bilingualFromInput(text);
   const now = new Date().toISOString();
@@ -61,6 +72,7 @@ app.post("/items", async (c) => {
     id: randomUUID(),
     textEn,
     textZh,
+    quantity,
     checked: false,
     addedAt: now,
     checkedAt: null as string | null,
@@ -89,6 +101,13 @@ app.patch("/items/:id", async (c) => {
     }
     const { textEn, textZh } = await bilingualFromInput(t);
     await updateItemText({ ...existing, textEn, textZh });
+  }
+  if (body.quantity !== undefined) {
+    const q = normalizeQuantity(body.quantity);
+    if (q == null) {
+      return c.json({ error: "quantity must be an integer ≥ 1" }, 400);
+    }
+    await updateItemQuantity(id, q);
   }
   if (body.checked !== undefined) {
     const checked = Boolean(body.checked);

@@ -13,11 +13,14 @@ export async function getItems(): Promise<ListItemsResponse> {
   return (await res.json()) as ListItemsResponse;
 }
 
-export async function createItem(text: string): Promise<CreateItemResponse> {
+export async function createItem(
+  text: string,
+  quantity: number = 1,
+): Promise<CreateItemResponse> {
   const res = await fetch(api("/items"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, quantity }),
   });
   if (!res.ok) throw new Error(`POST /items failed: ${res.status}`);
   return (await res.json()) as CreateItemResponse;
@@ -25,7 +28,7 @@ export async function createItem(text: string): Promise<CreateItemResponse> {
 
 export async function patchItem(
   id: string,
-  body: { checked?: boolean; text?: string },
+  body: { checked?: boolean; text?: string; quantity?: number },
 ): Promise<PatchItemResponse> {
   const res = await fetch(api(`/items/${encodeURIComponent(id)}`), {
     method: "PATCH",

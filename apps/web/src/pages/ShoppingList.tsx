@@ -29,8 +29,9 @@ export function ShoppingList() {
   const dismissUndo = useCallback(() => setUndoAction(null), []);
 
   const addMutation = useMutation({
-    mutationFn: (text: string) => createItem(text),
-    onMutate: async (text) => {
+    mutationFn: ({ text, quantity }: { text: string; quantity: number }) =>
+      createItem(text, quantity),
+    onMutate: async ({ text, quantity }) => {
       await qc.cancelQueries({ queryKey: ["items"] });
       const previous = qc.getQueryData<ListItemsResponse>(["items"]);
       const tempId = `temp:${crypto.randomUUID()}`;
@@ -39,6 +40,7 @@ export function ShoppingList() {
         id: tempId,
         textEn: text.trim(),
         textZh: text.trim(),
+        quantity,
         checked: false,
         addedAt: now,
         checkedAt: null,
@@ -49,14 +51,14 @@ export function ShoppingList() {
       setSaveError(null);
       return { previous, tempId };
     },
-    onSuccess: (data, _text, ctx) => {
+    onSuccess: (data, _vars, ctx) => {
       qc.setQueryData<ListItemsResponse>(["items"], (old) => ({
         items: sortListItems(
           (old?.items ?? []).map((i) => (i.id === ctx?.tempId ? data.item : i)),
         ),
       }));
     },
-    onError: (_e, _text, ctx) => {
+    onError: (_e, _vars, ctx) => {
       if (ctx?.previous !== undefined) {
         qc.setQueryData(["items"], ctx.previous);
       } else {
@@ -64,6 +66,37 @@ export function ShoppingList() {
       }
       setSaveError(
         lang === "zh" ? "无法添加商品，请重试。" : "Could not add that item. Try again.",
+      );
+    },
+  });
+
+  const quantityMutation = useMutation({
+    mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
+      patchItem(id, { quantity }),
+    onMutate: async ({ id, quantity }) => {
+      await qc.cancelQueries({ queryKey: ["items"] });
+      const previous = qc.getQueryData<ListItemsResponse>(["items"]);
+      qc.setQueryData<ListItemsResponse>(["items"], (old) => ({
+        items: sortListItems(
+          (old?.items ?? []).map((i) => (i.id === id ? { ...i, quantity } : i)),
+        ),
+      }));
+      setSaveError(null);
+      return { previous };
+    },
+    onSuccess: (data) => {
+      qc.setQueryData<ListItemsResponse>(["items"], (old) => ({
+        items: sortListItems(
+          (old?.items ?? []).map((i) => (i.id === data.item.id ? data.item : i)),
+        ),
+      }));
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx?.previous !== undefined) {
+        qc.setQueryData(["items"], ctx.previous);
+      }
+      setSaveError(
+        lang === "zh" ? "无法更新数量，请重试。" : "Could not update the quantity. Try again.",
       );
     },
   });
@@ -125,7 +158,7 @@ export function ShoppingList() {
             : `Removed: ${textToRestore.slice(0, 48)}${textToRestore.length > 48 ? "…" : ""}`,
         onUndo: async () => {
           try {
-            await createItem(textToRestore);
+            await createItem(textToRestore, snap.quantity);
             await qc.invalidateQueries({ queryKey: ["items"] });
           } catch {
             setSaveError(lang === "zh" ? "撤销失败，请手动添加。" : "Undo failed — add the item again.");
@@ -169,7 +202,7 @@ export function ShoppingList() {
           try {
             for (const s of snapshot) {
               const t = s.textEn.trim() || s.textZh.trim();
-              if (t) await createItem(t);
+              if (t) await createItem(t, s.quantity);
             }
             await qc.invalidateQueries({ queryKey: ["items"] });
           } catch {
@@ -237,6 +270,9 @@ export function ShoppingList() {
 
   const addLabel = lang === "zh" ? "添加" : "Add";
   const deleteLabel = lang === "zh" ? "删除" : "Delete";
+  const decLabel = lang === "zh" ? "减少数量" : "Decrease quantity";
+  const incLabel = lang === "zh" ? "增加数量" : "Increase quantity";
+  const qtyLabel = lang === "zh" ? "数量" : "Quantity";
 
   const saveErrorDismiss = lang === "zh" ? "关闭" : "Dismiss";
   const retryLabel = lang === "zh" ? "重试" : "Retry";
@@ -284,10 +320,13 @@ export function ShoppingList() {
         )}
 
         <AddItem
-          onAdd={(t) => addMutation.mutateAsync(t)}
+          onAdd={(text, quantity) => addMutation.mutateAsync({ text, quantity })}
           disabled={addMutation.isPending || loadingInitial || loadFailed}
           placeholder={ph}
           addLabel={addLabel}
+          decLabel={decLabel}
+          incLabel={incLabel}
+          qtyLabel={qtyLabel}
         />
 
         {loadFailed && (
@@ -336,8 +375,11 @@ export function ShoppingList() {
                     key={item.id}
                     item={item}
                     deleteLabel={deleteLabel}
+                    decLabel={decLabel}
+                    incLabel={incLabel}
                     onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                     onDelete={(id) => deleteMutation.mutate(id)}
+                    onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
                   />
                 ))}
                 {open.length === 0 && emptyList && (
@@ -374,8 +416,11 @@ export function ShoppingList() {
                       key={item.id}
                       item={item}
                       deleteLabel={deleteLabel}
+                      decLabel={decLabel}
+                      incLabel={incLabel}
                       onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                       onDelete={(id) => deleteMutation.mutate(id)}
+                      onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
                     />
                   ))}
                 </div>
