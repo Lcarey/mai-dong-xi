@@ -6,6 +6,7 @@ build/
 *.log
 .DS_Store
 cdk.out/
+infra/cdk-outputs.json
 .aws-sam/
 .vite/
 coverage/
