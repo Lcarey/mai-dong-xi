@@ -456,9 +456,17 @@ export function ShoppingList() {
                 onClick={() => setConfirmClearOpen(true)}
                 disabled={clearDoneMutation.isPending}
               >
-                {lang === "zh" ? "清除所有已买" : "Clear all bought"}
+                {lang === "zh" ? "🛒 清除所有已买" : "🛒 Clear all Bought"}
               </button>
             )}
+            <a
+              href="https://github.com/lcarey/mai-dong-xi/issues/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-full border border-emerald-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900 no-underline"
+            >
+              {lang === "zh" ? "🐛 功能/错误反馈" : "🐛 Feature/Bug Request"}
+            </a>
           </div>
         )}
       </div>
