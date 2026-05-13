@@ -335,7 +335,6 @@ export function ShoppingList() {
                   <ItemRow
                     key={item.id}
                     item={item}
-                    lang={lang}
                     deleteLabel={deleteLabel}
                     onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                     onDelete={(id) => deleteMutation.mutate(id)}
@@ -374,7 +373,6 @@ export function ShoppingList() {
                     <ItemRow
                       key={item.id}
                       item={item}
-                      lang={lang}
                       deleteLabel={deleteLabel}
                       onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                       onDelete={(id) => deleteMutation.mutate(id)}

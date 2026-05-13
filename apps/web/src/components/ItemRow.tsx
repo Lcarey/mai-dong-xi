@@ -1,19 +1,17 @@
 import { useState, type TouchEvent } from "react";
-import type { DisplayLanguage, ListItem } from "@maidongxi/shared";
-import { displayText, subtitleText } from "../lib/language";
+import type { ListItem } from "@maidongxi/shared";
+import { formatItemRichLine } from "../lib/itemLabel";
 
 interface Props {
   item: ListItem;
-  lang: DisplayLanguage;
   onToggle: (id: string, checked: boolean) => void;
   onDelete: (id: string) => void;
   deleteLabel: string;
 }
 
-export function ItemRow({ item, lang, onToggle, onDelete, deleteLabel }: Props) {
+export function ItemRow({ item, onToggle, onDelete, deleteLabel }: Props) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const label = displayText(item, lang);
-  const sub = subtitleText(item, lang);
+  const label = formatItemRichLine(item);
 
   const onTouchStart = (e: TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -46,19 +44,10 @@ export function ItemRow({ item, lang, onToggle, onDelete, deleteLabel }: Props) 
         >
           {item.checked ? "✓" : ""}
         </span>
-        <span className="min-w-0 flex-1">
-          <span
-            className={`block text-base leading-snug ${item.checked ? "text-emerald-800/50 line-through" : "text-emerald-950"}`}
-          >
-            {label}
-          </span>
-          {sub && (
-            <span
-              className={`mt-0.5 block text-xs leading-snug ${item.checked ? "text-emerald-800/35 line-through" : "text-emerald-800/55"}`}
-            >
-              {sub}
-            </span>
-          )}
+        <span
+          className={`min-w-0 flex-1 text-base leading-snug ${item.checked ? "text-emerald-800/50 line-through" : "text-emerald-950"}`}
+        >
+          {label}
         </span>
       </button>
       <button
