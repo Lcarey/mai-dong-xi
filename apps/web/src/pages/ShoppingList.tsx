@@ -270,13 +270,15 @@ export function ShoppingList() {
       : "Milk, bread, apples…";
 
   const addLabel = lang === "zh" ? "添加" : "Add";
-  const deleteLabel = lang === "zh" ? "删除" : "Delete";
   const decLabel = lang === "zh" ? "减少数量" : "Decrease quantity";
   const incLabel = lang === "zh" ? "增加数量" : "Increase quantity";
   const qtyLabel = lang === "zh" ? "数量" : "Quantity";
   const quantityCollapsedHint =
     lang === "zh" ? "点按以调整数量" : "Tap to adjust quantity";
-  const toggleLabel = lang === "zh" ? "标记为已买" : "Mark as bought";
+  const swipeAriaUnchecked =
+    lang === "zh" ? "向左滑删除，向右滑标记已买" : "Swipe left to delete, swipe right to mark as bought";
+  const swipeAriaChecked =
+    lang === "zh" ? "向左滑删除，向右滑取消已买" : "Swipe left to delete, swipe right to move back to buy";
 
   const saveErrorDismiss = lang === "zh" ? "关闭" : "Dismiss";
   const retryLabel = lang === "zh" ? "重试" : "Retry";
@@ -378,12 +380,11 @@ export function ShoppingList() {
                   <ItemRow
                     key={item.id}
                     item={item}
-                    deleteLabel={deleteLabel}
                     decLabel={decLabel}
                     incLabel={incLabel}
-                    toggleLabel={toggleLabel}
                     qtyLabel={qtyLabel}
                     quantityCollapsedHint={quantityCollapsedHint}
+                    swipeAriaLabel={swipeAriaUnchecked}
                     onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                     onDelete={(id) => deleteMutation.mutate(id)}
                     onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
@@ -422,12 +423,11 @@ export function ShoppingList() {
                     <ItemRow
                       key={item.id}
                       item={item}
-                      deleteLabel={deleteLabel}
                       decLabel={decLabel}
                       incLabel={incLabel}
-                      toggleLabel={toggleLabel}
                       qtyLabel={qtyLabel}
                       quantityCollapsedHint={quantityCollapsedHint}
+                      swipeAriaLabel={swipeAriaChecked}
                       onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                       onDelete={(id) => deleteMutation.mutate(id)}
                       onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
