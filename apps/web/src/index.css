@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    font-family: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
+    background: linear-gradient(160deg, #ecfdf5 0%, #d1fae5 45%, #fef3c7 100%);
+    background-attachment: fixed;
+    color: #14532d;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "mai-dong-xi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "mai-dong-xi — shared household shopping list with EN/ZH translation",
+  "workspaces": ["apps/*", "packages/*", "infra"],
+  "scripts": {
+    "build:shared": "npm run build -w @maidongxi/shared",
+    "build:api": "npm run build -w @maidongxi/api",
+    "build:web": "npm run build -w @maidongxi/web",
+    "build": "npm run build:shared && npm run build:api && npm run build:web",
+    "dev:web": "npm run dev -w @maidongxi/web",
+    "dev:api": "npm run dev -w @maidongxi/api",
+    "deploy": "npm run build && npm run deploy -w @maidongxi/infra"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
