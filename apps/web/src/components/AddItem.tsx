@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
   onAdd: (text: string) => void | Promise<unknown>;
@@ -8,15 +8,14 @@ interface Props {
 }
 
 /**
- * Chrome on iOS often shows the payment / card autofill strip on plain `<input
- * type="text">` inside forms. Mitigations:
- * - Use a single-line `<textarea>` (different control class → fewer payment heuristics).
- * - Tiny honeypot fields before the real control (visually hidden, not display:none).
- * - Short readOnly-until-focus window so the first autofill pass does not see an editable “generic” text input.
+ * Chrome on iOS often shows the payment autofill strip on plain text inputs.
+ * We use a single-line `<textarea>` plus tiny honeypot fields (see below).
+ *
+ * We do **not** use readOnly-then-unlock: on iOS Safari/Chrome that races with
+ * focus and the keyboard never appears on first tap.
  */
 export function AddItem({ onAdd, disabled, placeholder, addLabel }: Props) {
   const [text, setText] = useState("");
-  const [autofillLock, setAutofillLock] = useState(true);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
 
   const submitItem = useCallback(async () => {
@@ -25,11 +24,10 @@ export function AddItem({ onAdd, disabled, placeholder, addLabel }: Props) {
     try {
       await onAdd(t);
       setText("");
-      setAutofillLock(true);
       requestAnimationFrame(() => {
         const el = fieldRef.current;
         if (el) {
-          el.focus();
+          el.focus({ preventScroll: true });
           el.select();
         }
       });
@@ -37,6 +35,15 @@ export function AddItem({ onAdd, disabled, placeholder, addLabel }: Props) {
       /* parent handles errors */
     }
   }, [disabled, onAdd, text]);
+
+  /** Focus when the field becomes usable (iOS may still require a tap for keyboard on cold load). */
+  useEffect(() => {
+    if (disabled) return;
+    const t = window.setTimeout(() => {
+      fieldRef.current?.focus({ preventScroll: true });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [disabled]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +74,6 @@ export function AddItem({ onAdd, disabled, placeholder, addLabel }: Props) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        onFocus={() => setAutofillLock(false)}
         placeholder={placeholder}
         disabled={disabled}
         enterKeyHint="done"
@@ -78,7 +84,7 @@ export function AddItem({ onAdd, disabled, placeholder, addLabel }: Props) {
         autoCorrect="on"
         autoCapitalize="sentences"
         spellCheck={true}
-        readOnly={autofillLock && !disabled}
+        autoFocus={!disabled}
         data-lpignore="true"
         data-bwignore="true"
         aria-autocomplete="none"
