@@ -20,6 +20,7 @@ export function ShoppingList() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const itemsQuery = useQuery({
     queryKey: ["items"],
@@ -196,8 +197,8 @@ export function ShoppingList() {
         kind: "clear",
         message:
           lang === "zh"
-            ? `已清除 ${snapshot.length} 件已完成商品`
-            : `Cleared ${snapshot.length} done item${snapshot.length === 1 ? "" : "s"}`,
+            ? `已清除 ${snapshot.length} 件已买商品`
+            : `Cleared ${snapshot.length} bought item${snapshot.length === 1 ? "" : "s"}`,
         onUndo: async () => {
           try {
             for (const s of snapshot) {
@@ -216,7 +217,7 @@ export function ShoppingList() {
         qc.setQueryData(["items"], ctx.previous);
       }
       setSaveError(
-        lang === "zh" ? "无法清除已完成，请重试。" : "Could not clear done items. Try again.",
+        lang === "zh" ? "无法清除已买，请重试。" : "Could not clear bought items. Try again.",
       );
     },
   });
@@ -273,6 +274,7 @@ export function ShoppingList() {
   const decLabel = lang === "zh" ? "减少数量" : "Decrease quantity";
   const incLabel = lang === "zh" ? "增加数量" : "Increase quantity";
   const qtyLabel = lang === "zh" ? "数量" : "Quantity";
+  const toggleLabel = lang === "zh" ? "标记为已买" : "Mark as bought";
 
   const saveErrorDismiss = lang === "zh" ? "关闭" : "Dismiss";
   const retryLabel = lang === "zh" ? "重试" : "Retry";
@@ -377,6 +379,7 @@ export function ShoppingList() {
                     deleteLabel={deleteLabel}
                     decLabel={decLabel}
                     incLabel={incLabel}
+                    toggleLabel={toggleLabel}
                     onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                     onDelete={(id) => deleteMutation.mutate(id)}
                     onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
@@ -399,15 +402,15 @@ export function ShoppingList() {
               <section>
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-900/60">
-                    {lang === "zh" ? "已完成" : "Done"} ({done.length})
+                    {lang === "zh" ? "已买" : "Bought"} ({done.length})
                   </h2>
                   <button
                     type="button"
                     className="text-xs font-semibold text-emerald-800 underline-offset-2 hover:underline"
-                    onClick={() => clearDoneMutation.mutate()}
+                    onClick={() => setConfirmClearOpen(true)}
                     disabled={clearDoneMutation.isPending}
                   >
-                    {lang === "zh" ? "清除已完成" : "Clear done"}
+                    {lang === "zh" ? "清除已买" : "Clear bought"}
                   </button>
                 </div>
                 <div className="flex flex-col gap-2 opacity-90">
@@ -418,6 +421,7 @@ export function ShoppingList() {
                       deleteLabel={deleteLabel}
                       decLabel={decLabel}
                       incLabel={incLabel}
+                      toggleLabel={toggleLabel}
                       onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                       onDelete={(id) => deleteMutation.mutate(id)}
                       onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
@@ -430,20 +434,75 @@ export function ShoppingList() {
         )}
 
         {!loadFailed && (
-          <button
-            type="button"
-            className="mt-2 self-center rounded-full border border-emerald-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900"
-            onClick={() => void refetch()}
-            disabled={itemsQuery.isFetching}
-          >
-            {itemsQuery.isFetching ? (lang === "zh" ? "刷新中…" : "Refreshing…") : lang === "zh" ? "刷新" : "Refresh"}
-          </button>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              className="rounded-full border border-emerald-800/20 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900"
+              onClick={() => void refetch()}
+              disabled={itemsQuery.isFetching}
+            >
+              {itemsQuery.isFetching ? (lang === "zh" ? "刷新中…" : "Refreshing…") : lang === "zh" ? "刷新" : "Refresh"}
+            </button>
+            {done.length > 0 && (
+              <button
+                type="button"
+                className="rounded-full border border-rose-300 bg-white/80 px-4 py-2 text-sm font-medium text-rose-700 disabled:opacity-50"
+                onClick={() => setConfirmClearOpen(true)}
+                disabled={clearDoneMutation.isPending}
+              >
+                {lang === "zh" ? "清除所有已买" : "Clear all bought"}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-4">
         <UndoToast action={undoAction} lang={lang} onDismiss={dismissUndo} />
       </div>
+
+      {confirmClearOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-clear-title"
+          onClick={() => setConfirmClearOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="confirm-clear-title" className="text-base font-semibold text-emerald-950">
+              {lang === "zh" ? "清除所有已买商品？" : "Clear all bought items?"}
+            </h3>
+            <p className="mt-2 text-sm text-emerald-900/70">
+              {lang === "zh"
+                ? `将删除 ${done.length} 件已买商品。`
+                : `${done.length} bought item${done.length === 1 ? "" : "s"} will be removed.`}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-emerald-900/15 bg-white px-4 py-2 text-sm font-semibold text-emerald-900"
+                onClick={() => setConfirmClearOpen(false)}
+              >
+                {lang === "zh" ? "取消" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-rose-700 px-4 py-2 text-sm font-semibold text-white"
+                onClick={() => {
+                  clearDoneMutation.mutate();
+                  setConfirmClearOpen(false);
+                }}
+              >
+                {lang === "zh" ? "清除" : "Clear"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DeployStamp />
     </div>
