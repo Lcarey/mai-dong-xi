@@ -7,6 +7,7 @@
 // always gets real 简体 for Latin grocery-style input when possible.
 
 import { TranslateClient, TranslateTextCommand } from "@aws-sdk/client-translate";
+import { glossaryMatchChinese, glossaryMatchEnglish } from "./food-glossary.js";
 
 const region = process.env.AWS_REGION || "us-east-1";
 const local = process.env.DDB_LOCAL === "1";
@@ -96,6 +97,13 @@ export async function bilingualFromInput(raw: string): Promise<{ textEn: string;
   const text = raw.trim();
   if (!text) {
     return { textEn: "", textZh: "" };
+  }
+  if (looksLikeChinese(text)) {
+    const g = glossaryMatchChinese(text);
+    if (g) return { textEn: g.en, textZh: g.zh };
+  } else {
+    const g = glossaryMatchEnglish(text);
+    if (g) return { textEn: g.en, textZh: g.zh };
   }
   try {
     if (looksLikeChinese(text)) {

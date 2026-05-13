@@ -2,7 +2,7 @@
 
 Shared **household shopping list** for everyone at home: add items from any phone or browser, check them off, clear done. **No login** — anyone with the URL can edit (keep the CloudFront URL private to your family).
 
-**Auto-translation:** each item is stored as **English + Simplified Chinese** (`textEn` / `textZh`). Type in either language; the API fills in the other via **Amazon Translate**, with a **MyMemory** HTTP fallback when Translate is unavailable or returns non-Chinese for English input. The UI shows **English + 简体中文 + pinyin** on each line.
+**Auto-translation:** each item is stored as **English + Simplified Chinese** (`textEn` / `textZh`). Type in either language; the API fills in the other via **Amazon Translate**, with a **MyMemory** HTTP fallback when Translate is unavailable or returns non-Chinese for English input. **Common grocery words** (e.g. `ham` → 火腿) are resolved first from a **small curated glossary** so short ambiguous English is not left to machine translation alone. The UI shows **English + 简体中文 + pinyin** on each line.
 
 Architecture matches **popcorn-quest**-style serverless: **React + Vite + Tailwind PWA** on **S3 + CloudFront**, **Hono** on a **single Lambda** with **Function URL**, **DynamoDB** single-table, **AWS CDK** monorepo (`apps/api`, `apps/web`, `packages/shared`, `infra`).
 
