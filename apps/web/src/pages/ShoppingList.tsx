@@ -274,6 +274,8 @@ export function ShoppingList() {
   const decLabel = lang === "zh" ? "减少数量" : "Decrease quantity";
   const incLabel = lang === "zh" ? "增加数量" : "Increase quantity";
   const qtyLabel = lang === "zh" ? "数量" : "Quantity";
+  const quantityCollapsedHint =
+    lang === "zh" ? "点按以调整数量" : "Tap to adjust quantity";
   const toggleLabel = lang === "zh" ? "标记为已买" : "Mark as bought";
 
   const saveErrorDismiss = lang === "zh" ? "关闭" : "Dismiss";
@@ -380,6 +382,8 @@ export function ShoppingList() {
                     decLabel={decLabel}
                     incLabel={incLabel}
                     toggleLabel={toggleLabel}
+                    qtyLabel={qtyLabel}
+                    quantityCollapsedHint={quantityCollapsedHint}
                     onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                     onDelete={(id) => deleteMutation.mutate(id)}
                     onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}
@@ -422,6 +426,8 @@ export function ShoppingList() {
                       decLabel={decLabel}
                       incLabel={incLabel}
                       toggleLabel={toggleLabel}
+                      qtyLabel={qtyLabel}
+                      quantityCollapsedHint={quantityCollapsedHint}
                       onToggle={(id, checked) => toggleMutation.mutate({ id, checked })}
                       onDelete={(id) => deleteMutation.mutate(id)}
                       onQuantityChange={(id, quantity) => quantityMutation.mutate({ id, quantity })}

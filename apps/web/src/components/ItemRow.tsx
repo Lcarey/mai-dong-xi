@@ -1,6 +1,7 @@
 import { useState, type TouchEvent } from "react";
 import type { ListItem } from "@maidongxi/shared";
 import { formatItemRichLine } from "../lib/itemLabel";
+import { QuantityStepper } from "./QuantityStepper";
 
 interface Props {
   item: ListItem;
@@ -11,6 +12,8 @@ interface Props {
   decLabel: string;
   incLabel: string;
   toggleLabel: string;
+  qtyLabel: string;
+  quantityCollapsedHint: string;
 }
 
 const MIN_QTY = 1;
@@ -25,6 +28,8 @@ export function ItemRow({
   decLabel,
   incLabel,
   toggleLabel,
+  qtyLabel,
+  quantityCollapsedHint,
 }: Props) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const label = formatItemRichLine(item);
@@ -81,34 +86,16 @@ export function ItemRow({
         </span>
       </div>
 
-      <div className="flex shrink-0 items-center self-center rounded-full border-2 border-emerald-900/15 bg-white">
-        <button
-          type="button"
-          onClick={dec}
-          disabled={qty <= MIN_QTY}
-          aria-label={decLabel}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
-        >
-          −
-        </button>
-        <span
-          className={`min-w-[1.5rem] px-0.5 text-center text-base font-semibold tabular-nums ${
-            item.checked ? "text-emerald-800/50" : "text-emerald-950"
-          }`}
-          aria-label={`${qty}`}
-        >
-          {qty}
-        </span>
-        <button
-          type="button"
-          onClick={inc}
-          disabled={qty >= MAX_QTY}
-          aria-label={incLabel}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
-        >
-          +
-        </button>
-      </div>
+      <QuantityStepper
+        quantity={qty}
+        checked={item.checked}
+        onDecrease={dec}
+        onIncrease={inc}
+        decLabel={decLabel}
+        incLabel={incLabel}
+        collapsedAriaLabel={`${qtyLabel}: ${qty}. ${quantityCollapsedHint}`}
+        quantityGroupAriaLabel={qtyLabel}
+      />
 
       <button
         type="button"
