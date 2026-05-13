@@ -10,6 +10,7 @@ interface Props {
   deleteLabel: string;
   decLabel: string;
   incLabel: string;
+  toggleLabel: string;
 }
 
 const MIN_QTY = 1;
@@ -23,6 +24,7 @@ export function ItemRow({
   deleteLabel,
   decLabel,
   incLabel,
+  toggleLabel,
 }: Props) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const label = formatItemRichLine(item);
@@ -55,50 +57,54 @@ export function ItemRow({
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <button
-        type="button"
-        className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left"
-        onClick={() => onToggle(item.id, !item.checked)}
-      >
-        <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
-            item.checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-emerald-800/30 bg-white"
-          }`}
-          aria-hidden
+      <div className="flex min-w-0 flex-1 items-center gap-2 py-3 pl-2 pr-1">
+        <button
+          type="button"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          onClick={() => onToggle(item.id, !item.checked)}
+          aria-label={toggleLabel}
+          aria-pressed={item.checked}
         >
-          {item.checked ? "✓" : ""}
-        </span>
+          <span
+            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 text-[0.7rem] leading-none ${
+              item.checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-emerald-800/30 bg-white"
+            }`}
+            aria-hidden
+          >
+            {item.checked ? "✓" : ""}
+          </span>
+        </button>
         <span
           className={`min-w-0 flex-1 text-base leading-snug ${item.checked ? "text-emerald-800/50 line-through" : "text-emerald-950"}`}
         >
           {label}
         </span>
-      </button>
+      </div>
 
-      <div className="flex shrink-0 items-center gap-1 pr-1">
+      <div className="flex shrink-0 items-center self-center rounded-full border-2 border-emerald-900/15 bg-white">
         <button
           type="button"
           onClick={dec}
           disabled={qty <= MIN_QTY}
           aria-label={decLabel}
-          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-900/15 bg-white text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
         >
           −
         </button>
         <span
-          className={`min-w-[2.25rem] text-center text-base font-semibold tabular-nums ${
+          className={`min-w-[1.5rem] px-0.5 text-center text-base font-semibold tabular-nums ${
             item.checked ? "text-emerald-800/50" : "text-emerald-950"
           }`}
           aria-label={`${qty}`}
         >
-          ×&nbsp;{qty}
+          {qty}
         </span>
         <button
           type="button"
           onClick={inc}
           disabled={qty >= MAX_QTY}
           aria-label={incLabel}
-          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-900/15 bg-white text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-xl font-semibold text-emerald-900 active:bg-emerald-100 disabled:opacity-30"
         >
           +
         </button>
