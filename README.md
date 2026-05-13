@@ -2,7 +2,7 @@
 
 Shared **household shopping list** for everyone at home: add items from any phone or browser, check them off, clear done. **No login** — anyone with the URL can edit (keep the CloudFront URL private to your family).
 
-**Auto-translation:** each item is stored as **English + Simplified Chinese** (`textEn` / `textZh`). Type in either language; the API fills in the other via **AWS Translate**. The UI has an **English / 简体中文** toggle (saved in `localStorage`).
+**Auto-translation:** each item is stored as **English + Simplified Chinese** (`textEn` / `textZh`). Type in either language; the API fills in the other via **Amazon Translate**, with a **MyMemory** HTTP fallback when Translate is unavailable or returns non-Chinese for English input. The UI shows **English + 简体中文 + pinyin** on each line.
 
 Architecture matches **popcorn-quest**-style serverless: **React + Vite + Tailwind PWA** on **S3 + CloudFront**, **Hono** on a **single Lambda** with **Function URL**, **DynamoDB** single-table, **AWS CDK** monorepo (`apps/api`, `apps/web`, `packages/shared`, `infra`).
 
@@ -57,7 +57,7 @@ export TABLE_NAME=MaiDongXi
 npm run dev:api
 ```
 
-With `DDB_LOCAL=1`, **Translate is skipped** and the “other language” mirrors your input so you can work fully offline.
+With `DDB_LOCAL=1`, **Amazon Translate is not called**; the API uses the same **MyMemory** fallback (and local DynamoDB) so you still get bilingual strings when online.
 
 ### 3. Web (proxies `/api` → API)
 

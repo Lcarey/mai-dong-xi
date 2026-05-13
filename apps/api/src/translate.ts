@@ -1,6 +1,10 @@
 // =============================================================================
 // AWS Translate wrapper — EN <-> zh (Simplified)
 // =============================================================================
+//
+// If Amazon Translate is unavailable or returns non-Chinese for en→zh, we fall
+// back to MyMemory’s public API (server-side fetch from Lambda) so the UI
+// always gets real 简体 for Latin grocery-style input when possible.
 
 import { TranslateClient, TranslateTextCommand } from "@aws-sdk/client-translate";
 
@@ -14,6 +18,51 @@ export function looksLikeChinese(text: string): boolean {
   return /[\u4e00-\u9fff]/.test(text);
 }
 
+/** MyMemory returns this when quota is exceeded — treat as failure. */
+function isMyMemoryGarbage(s: string): boolean {
+  return /MYMEMORY\s+WARNING/i.test(s) || /QUERY LENGTH LIMIT EXCEEDED/i.test(s);
+}
+
+/**
+ * Best-effort en→zh (Simplified) via MyMemory when AWS Translate is down or wrong.
+ * Only used from Lambda (no browser CORS issues).
+ */
+async function translateEnToZhPublicFallback(latin: string): Promise<string | null> {
+  const q = latin.trim().slice(0, 500);
+  if (!q) return null;
+  try {
+    const u = new URL("https://api.mymemory.translated.net/get");
+    u.searchParams.set("q", q);
+    u.searchParams.set("langpair", "en|zh-CN");
+    const res = await fetch(u, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { responseData?: { translatedText?: string } };
+    const t = data.responseData?.translatedText?.trim();
+    if (!t || t === q || isMyMemoryGarbage(t)) return null;
+    return looksLikeChinese(t) ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+async function translateZhToEnPublicFallback(zh: string): Promise<string | null> {
+  const q = zh.trim().slice(0, 500);
+  if (!q) return null;
+  try {
+    const u = new URL("https://api.mymemory.translated.net/get");
+    u.searchParams.set("q", q);
+    u.searchParams.set("langpair", "zh-CN|en");
+    const res = await fetch(u, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { responseData?: { translatedText?: string } };
+    const t = data.responseData?.translatedText?.trim();
+    if (!t || t === q || isMyMemoryGarbage(t)) return null;
+    return looksLikeChinese(t) ? null : t;
+  } catch {
+    return null;
+  }
+}
+
 export async function translateText(
   text: string,
   source: "en" | "zh",
@@ -23,7 +72,13 @@ export async function translateText(
   if (!trimmed) return "";
   if (source === target) return trimmed;
   if (local) {
-    // Offline dev: no paid Translate calls; mirror text so the app still works.
+    // Offline dev: no AWS — use public fallback so en↔zh still produces real bilingual strings.
+    if (source === "en" && target === "zh") {
+      return (await translateEnToZhPublicFallback(trimmed)) || trimmed;
+    }
+    if (source === "zh" && target === "en") {
+      return (await translateZhToEnPublicFallback(trimmed)) || trimmed;
+    }
     return trimmed;
   }
   const out = await client.send(
@@ -45,13 +100,26 @@ export async function bilingualFromInput(raw: string): Promise<{ textEn: string;
   try {
     if (looksLikeChinese(text)) {
       const textZh = text;
-      const textEn = await translateText(text, "zh", "en");
-      return { textEn: textEn || textZh, textZh };
+      let textEn = await translateText(text, "zh", "en");
+      if (!textEn.trim() || looksLikeChinese(textEn)) {
+        const fb = await translateZhToEnPublicFallback(textZh);
+        if (fb) textEn = fb;
+      }
+      return { textEn: (textEn || textZh).trim(), textZh };
     }
     const textEn = text;
-    const textZh = await translateText(text, "en", "zh");
-    return { textEn, textZh: textZh || textEn };
+    let textZh = await translateText(text, "en", "zh");
+    if (!looksLikeChinese(textZh)) {
+      const fb = await translateEnToZhPublicFallback(textEn);
+      if (fb) textZh = fb;
+    }
+    return { textEn, textZh: (textZh || textEn).trim() };
   } catch {
-    return { textEn: text, textZh: text };
+    if (looksLikeChinese(text)) {
+      const fb = await translateZhToEnPublicFallback(text);
+      return { textEn: (fb || text).trim(), textZh: text };
+    }
+    const fb = await translateEnToZhPublicFallback(text);
+    return { textEn: text, textZh: (fb || text).trim() };
   }
 }
